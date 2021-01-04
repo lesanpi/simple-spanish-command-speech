@@ -1,7 +1,7 @@
 class Hyperparams:
 
     vocab = "PE abcdefghigklmnñopqrstuvwxyz{.¿?"
-    data = ""
+    data = "data/tacotron/"
     test_data = ""
     max_duration = 10.0
 

@@ -1,2 +1,4 @@
 .idea
 /data
+testing.py
+__pycache__/

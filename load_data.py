@@ -1,0 +1,52 @@
+from __future__ import print_function
+from hyperparams import Hyperparams as hp
+import numpy as np
+import codecs
+import re
+import os
+import unicodedata
+import tensorflow as tf
+
+def load_vocab():
+    char2index = {char:idx for idx, char in enumerate(hp.vocab)}
+    idx2char = {idx:char for idx, char in enumerate(hp.vocab)}
+
+    return char2index, idx2char
+
+def text_normalize(text):
+
+    accents = ('COMBINING ACUTE ACCENT', 'COMBINING GRAVE ACCENT')
+    accents = set(map(unicodedata.lookup, accents))
+    chars = [c for c in unicodedata.normalize('NFD', text) if c not in accents]
+
+    text = unicodedata.normalize('NFC', ''.join(chars))
+    text = text.lower()
+    text = re.sub("[^{}]".format(hp.vocab), " ", text)
+    text = re.sub("[ ]+", " ", text)
+    return text
+
+def load_data(mode = "train"):
+    char2index, index2char = load_vocab()
+
+    if mode in ("train", "eval"):
+        fpaths, text_lengths, texts = [], [], []
+        transcript = os.path.join(hp.data, 'transcript.csv')
+        lines = codecs.open(transcript, 'r', 'utf-8').readlines()
+        total_hours = 0
+
+        if mode == "train":
+            lines = lines[:]
+
+        for line in lines:
+            fname, _, text = line.strip().split("|")
+
+            fpath = os.path.join(hp.data, "wavs", fname + ".wav")
+            fpaths.append(fpath)
+
+            text = text_normalize(text) + "E"  # E: EOS
+            text = [char2index[char] for char in text]
+            print(text)
+            text_lengths.append(len(text))
+            texts.append(np.array(text, np.int32))
+
+        return fpaths, text_lengths, texts
