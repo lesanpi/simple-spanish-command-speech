@@ -50,3 +50,16 @@ def load_data(mode = "train"):
             texts.append(np.array(text, np.int32))
 
         return fpaths, text_lengths, texts
+
+def get_batch():
+    with tf.device('/cpu:0'):
+        fpaths, text_lengths, texts = load_data()
+        max_len, min_len = max(text_lengths), min(text_lengths)
+
+        # Cantidad de batchs
+        num_batch = len(fpaths) // hp.batch_size
+        fpaths = tf.convert_to_tensor(fpaths)
+        text_lengths = tf.convert_to_tensor(text_lengths)
+        texts = tf.convert_to_tensor(texts)
+
+        tf.pyf

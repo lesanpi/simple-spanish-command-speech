@@ -1,5 +1,7 @@
 class Hyperparams:
 
+    prepro = False
+
     vocab = "PE abcdefghigklmnñopqrstuvwxyz{.¿?"
     data = "data/tacotron/"
     test_data = ""
@@ -23,4 +25,12 @@ class Hyperparams:
     lr = 0.001
     logdir = ""
     sampledir = "samples"
+    batch_size = 32
+    r = 5 # Factor de reduction
+    dropout_rate = .5
+
+    # training scheme
+    lr = 0.001  # Initial learning rate.
+    logdir = "logdir/01"
+    sampledir = 'samples'
     batch_size = 32
