@@ -6,6 +6,7 @@ import re
 import os
 import unicodedata
 import tensorflow as tf
+from utils import *
 
 def load_vocab():
     char2index = {char:idx for idx, char in enumerate(hp.vocab)}
@@ -45,7 +46,7 @@ def load_data(mode = "train"):
 
             text = text_normalize(text) + "E"  # E: EOS
             text = [char2index[char] for char in text]
-            print(text)
+
             text_lengths.append(len(text))
             texts.append(np.array(text, np.int32))
 
@@ -55,11 +56,20 @@ def get_batch():
     with tf.device('/cpu:0'):
         fpaths, text_lengths, texts = load_data()
         max_len, min_len = max(text_lengths), min(text_lengths)
-
+        print(fpaths)
+        print(type(fpaths[0]))
         # Cantidad de batchs
         num_batch = len(fpaths) // hp.batch_size
-        fpaths = tf.convert_to_tensor(fpaths)
+
+        fpaths = tf.convert_to_tensor(fpaths, dtype=tf.string)
         text_lengths = tf.convert_to_tensor(text_lengths)
         texts = tf.convert_to_tensor(texts)
 
-        tf.pyf
+        print(fpaths)
+        print(type(fpaths[0]))
+
+        tf.data.Dataset.from_tensor_slices(tuple([fpaths, text_lengths, texts]))
+        text = tf.io.decode_raw(texts, tf.int32)
+
+        fname, mel, mag = tf.py_function(load_spectrograms, [fpaths], [tf.string, tf.float32, tf.float32])
+

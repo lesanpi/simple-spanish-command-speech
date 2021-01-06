@@ -4,6 +4,7 @@ class Hyperparams:
 
     vocab = "PE abcdefghigklmnñopqrstuvwxyz{.¿?"
     data = "data/tacotron/"
+
     test_data = ""
     max_duration = 10.0
 
@@ -17,7 +18,7 @@ class Hyperparams:
     n_mels = 80
     power = 1.2
     n_iter = 50
-    preemphases = .97
+    preemphasis = .97
     max_db = 100
     ref_db = 20
 
@@ -34,3 +35,4 @@ class Hyperparams:
     logdir = "logdir/01"
     sampledir = 'samples'
     batch_size = 32
+    num_epochs = 30

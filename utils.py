@@ -1,5 +1,4 @@
 from __future__ import print_function, division
-
 from hyperparams import Hyperparams as hp
 import numpy as np
 import librosa
@@ -9,38 +8,51 @@ matplotlib.use('pdf')
 import matplotlib.pyplot as plt
 from scipy import signal
 import os
+import tensorflow as tf
 
-def get_spectrograms(fpath):
-    # Cargamos el archivo de audio
-    y, sample_r = librosa.load(fpath, sr=hp.sr)
+def log10(x):
+  numerator = tf.math.log(x)
+  denominator = tf.math.log(tf.constant(10, dtype=numerator.dtype))
+  return numerator / denominator
 
-    # Recortamos el inicio y final del silencio
-    y, _ = librosa.effects.trim(y)
+def decode_audio(audio_binary):
+    audio, _ = tf.audio.decode_wav(audio_binary)
+    return tf.squeeze(audio, axis=-1)
 
-    # Pre-enfasis
-    y = np.append(y[0], y[1:] - hp.preemphasis * y[:-1])
+def get_waveform(file_path):
 
-    # Short Time Fourier Transform
-    linear = librosa.stft(y=y,
-                          n_fft=hp.n_fft,
-                          hop_length=hp.hop_length,
-                          win_length=hp.win_length)
-    # Magnitud
-    mag = np.abs(linear)
+    audio_binary = tf.io.read_file(file_path)
+    waveform = decode_audio(audio_binary)
+    return waveform
 
-    # Mel Spectogram
-    mel_base = librosa.filters.mel(hp.sr, hp.n_fft, hp.n_mels)
-    mel = np.dot(mel_base, mag)
 
-    # En decibeles
-    mel = 20 * np.log10(np.maximum(1e-5, mel))
-    mag = 20 * np.log10(np.maximum(1e-5, mag))
+def get_spectrogram(waveform):
+    # Padding for files with less than 16000 samples
+    zero_padding = tf.zeros([16000] - tf.shape(waveform), dtype=tf.float32)
 
-    mel = np.clip((mel - hp.ref_db + hp.max_db) / hp.max_db, 1e-8, 1)
-    mag = np.clip((mag - hp.ref_db + hp.max_db) / hp.max_db, 1e-8, 1)
+    # Concatenate audio with padding so that all audio clips will be of the
+    # same length
+    waveform = tf.cast(waveform, tf.float32)
+    equal_length = tf.concat([waveform, zero_padding], 0)
+    spectrogram = tf.signal.stft(
+        equal_length, frame_length=hp.win_length, frame_step=hp.hop_length)
 
-    # Transpose
-    mel = mel.T.astype(np.float32)
-    mag = mag.T.astype(np.float32)
+    mag = tf.abs(spectrogram)
+    mel_basis = tf.signal.linear_to_mel_weight_matrix(num_mel_bins=hp.n_mels, sample_rate=hp.sr, num_spectrogram_bins=hp.n_fft)
+    mel = tf.tensordot(mel_basis, mag, axes = 1)
+
+    # A decibeles
+    mel = 20 * log10(tf.math.maximum(1e-15, mel))
+    mag = 20 * log10(tf.math.maximum(1e-15, mag))
+
+    # Normalizar
+    mel = tf.clip_by_value((mel - hp.ref_db + hp.max_db) / hp.max_db, 1e-8, 1)
+    mag = tf.clip_by_value((mag - hp.ref_db + hp.max_db) / hp.max_db, 1e-8, 1)
+
+    mel = tf.transpose(mel)
+    mag = tf.transpose(mag)
 
     return mel, mag
+
+
+
