@@ -1,22 +1,21 @@
 import os
 import pathlib
-
 import matplotlib.pyplot as plt
 import numpy as np
 import seaborn as sns
-
 from tensorflow.keras.layers.experimental import preprocessing
 from tensorflow.keras import layers
 from tensorflow.keras import models
 import tensorflow as tf
 from IPython import display
 
+
 SEED = 42
 AUTOTUNE = tf.data.experimental.AUTOTUNE
 tf.random.set_seed(SEED)
 np.random.seed(SEED)
 
-data_dir = pathlib.Path('data/mini_speech_commands')
+data_dir = pathlib.Path('data/spanish_speech_commands')
 if not data_dir.exists():
     tf.keras.utils.get_file(
         'mini_speech_commands.zip',
@@ -35,6 +34,7 @@ def get_label(file_path):
     parts = tf.strings.split(file_path, os.path.sep)
     return parts[-2]
 
+
 def get_waveform_and_label(file_path):
     label = get_label(file_path)
     audio_binary = tf.io.read_file(file_path)
@@ -43,18 +43,20 @@ def get_waveform_and_label(file_path):
 
 def get_spectrogram(waveform):
   # Padding for files with less than 16000 samples
-  zero_padding = tf.zeros([16000] - tf.shape(waveform), dtype=tf.float32)
+    print(tf.shape(waveform))
 
-  # Concatenate audio with padding so that all audio clips will be of the
-  # same length
-  waveform = tf.cast(waveform, tf.float32)
-  equal_length = tf.concat([waveform, zero_padding], 0)
-  spectrogram = tf.signal.stft(
-      equal_length, frame_length=255, frame_step=128)
+    zero_padding = tf.zeros([16000] - tf.shape(waveform), dtype=tf.float32)
 
-  spectrogram = tf.abs(spectrogram)
 
-  return spectrogram
+    # Concatenate audio with padding so that all audio clips will be of the
+    # same length
+    waveform = tf.cast(waveform, tf.float32)
+    equal_length = tf.concat([waveform, zero_padding], 0)
+    spectrogram = tf.signal.stft(
+        equal_length, frame_length=255, frame_step=128)
+    spectrogram = tf.abs(spectrogram)
+
+    return spectrogram
 
 def plot_spectrogram(spectrogram, ax):
   # Convert to frequencies to log scale and transpose so that the time is
@@ -86,9 +88,12 @@ def main():
     print(filenames[:3])
     filenames = tf.random.shuffle(filenames)
 
-    train_files = filenames[:6400]
-    val_files = filenames[6400: 6400 + 800]
-    test_files = filenames[-800:]
+    split = int(len(filenames) * 0.8)
+    split_v = int(len(filenames) * 0.9)
+    split_test = len(filenames) - split_v
+    train_files = filenames[:split]
+    val_files = filenames[split:split_v]
+    test_files = filenames[-split_test:]
 
     print('Training set size', len(train_files))
     print('Validation set size', len(val_files))
@@ -111,6 +116,7 @@ def main():
         ax.set_title(label)
 
     plt.show()
+    plt.close()
 
     for waveform, label in waveform_ds.take(1):
         label = label.numpy().decode('utf-8')
@@ -152,7 +158,7 @@ def main():
     val_ds = preprocess_dataset(val_files)
     test_ds = preprocess_dataset(test_files)
 
-    batch_size = 64
+    batch_size = 32
     train_ds = train_ds.batch(batch_size)
     val_ds = val_ds.batch(batch_size)
 
@@ -180,7 +186,6 @@ def main():
         layers.Dropout(0.5),
         layers.Dense(num_labels),
     ])
-
     model.summary()
 
     model.compile(
@@ -189,7 +194,7 @@ def main():
         metrics=['accuracy'],
     )
 
-    EPOCHS = 10
+    EPOCHS = 20
     history = model.fit(
         train_ds,
         validation_data=val_ds,
@@ -201,6 +206,23 @@ def main():
     plt.plot(history.epoch, metrics['loss'], metrics['val_loss'])
     plt.legend(['loss', 'val_loss'])
     plt.show()
+
+
+    test_audio = []
+    test_labels = []
+
+    for audio, label in test_ds:
+        test_audio.append(audio.numpy())
+        test_labels.append(label.numpy())
+
+    test_audio = np.array(test_audio)
+    test_labels = np.array(test_labels)
+
+    y_pred = np.argmax(model.predict(test_audio), axis=1)
+    y_true = test_labels
+
+    test_acc = sum(y_pred == y_true) / len(y_true)
+    print(f'Test set accuracy: {test_acc:.0%}')
 
 def print_hi(name):
     print(f'Hi, {name}')
