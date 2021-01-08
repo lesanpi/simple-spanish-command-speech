@@ -2,3 +2,5 @@
 /data
 testing.py
 __pycache__/
+recordAudio.py
+models/

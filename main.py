@@ -8,7 +8,7 @@ from tensorflow.keras import layers
 from tensorflow.keras import models
 import tensorflow as tf
 from IPython import display
-
+from datetime import datetime
 
 SEED = 42
 AUTOTUNE = tf.data.experimental.AUTOTUNE
@@ -16,6 +16,8 @@ tf.random.set_seed(SEED)
 np.random.seed(SEED)
 
 data_dir = pathlib.Path('data/spanish_speech_commands')
+sample_file = data_dir / 'no/01bb6a2a_nohash_0.wav'
+
 if not data_dir.exists():
     tf.keras.utils.get_file(
         'mini_speech_commands.zip',
@@ -94,6 +96,7 @@ def main():
     train_files = filenames[:split]
     val_files = filenames[split:split_v]
     test_files = filenames[-split_test:]
+    all_files = filenames[:]
 
     print('Training set size', len(train_files))
     print('Validation set size', len(val_files))
@@ -157,6 +160,7 @@ def main():
     train_ds = spectrogram_ds
     val_ds = preprocess_dataset(val_files)
     test_ds = preprocess_dataset(test_files)
+    ds = preprocess_dataset(all_files)
 
     batch_size = 32
     train_ds = train_ds.batch(batch_size)
@@ -189,7 +193,7 @@ def main():
     model.summary()
 
     model.compile(
-        optimizer=tf.keras.optimizers.Adam(),
+        optimizer=tf.keras.optimizers.Adam(learning_rate=0.0005),
         loss=tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True),
         metrics=['accuracy'],
     )
@@ -200,6 +204,7 @@ def main():
         validation_data=val_ds,
         epochs=EPOCHS,
         callbacks=tf.keras.callbacks.EarlyStopping(verbose=1, patience=2),
+        shuffle = True
     )
 
     metrics = history.history
@@ -223,6 +228,51 @@ def main():
 
     test_acc = sum(y_pred == y_true) / len(y_true)
     print(f'Test set accuracy: {test_acc:.0%}')
+
+    confusion_mtx = tf.math.confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(confusion_mtx, xticklabels=commands, yticklabels=commands,
+                annot=True, fmt='g')
+    plt.xlabel('Prediction')
+    plt.ylabel('Label')
+    plt.show()
+
+    test_audio = []
+    test_labels = []
+
+    for audio, label in ds:
+        test_audio.append(audio.numpy())
+        test_labels.append(label.numpy())
+
+    test_audio = np.array(test_audio)
+    test_labels = np.array(test_labels)
+
+    y_pred = np.argmax(model.predict(test_audio), axis=1)
+    y_true = test_labels
+
+    test_acc = sum(y_pred == y_true) / len(y_true)
+    print(f'All set accuracy: {test_acc:.0%}')
+
+    confusion_mtx = tf.math.confusion_matrix(y_true, y_pred)
+    plt.figure(figsize=(10, 8))
+    sns.heatmap(confusion_mtx, xticklabels=commands, yticklabels=commands,
+                annot=True, fmt='g')
+    plt.xlabel('Prediction')
+    plt.ylabel('Label')
+    plt.show()
+    today = datetime.now()
+    model.save('models/model.h5')
+    model.save(f'models/{str(today.date())}/model.h5')
+
+    sample_file = data_dir / 'no/01bb6a2a_nohash_0.wav'
+
+    sample_ds = preprocess_dataset([str(sample_file)])
+
+    for spectrogram, label in sample_ds.batch(1):
+        prediction = model(spectrogram)
+        plt.bar(commands, tf.nn.softmax(prediction[0]))
+        plt.title(f'Predictions for "{commands[label[0]]}"')
+        plt.show()
 
 def print_hi(name):
     print(f'Hi, {name}')

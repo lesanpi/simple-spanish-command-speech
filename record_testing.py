@@ -1,11 +1,15 @@
 import uuid
-
+from main import *
+from tensorflow.keras.models import load_model
 import pyaudio
 import wave
 import os
 import tensorflow as tf
 import numpy as np
 import pathlib
+
+model = load_model('models/model.h5')
+sample_file = pathlib.Path('test/test.wav')
 
 main_commands = ['abajo','alto','arriba','derecha', 'izquierda','no','si','sigue']
 DATA_DIR = pathlib.Path('data/spanish_speech_commands')
@@ -19,6 +23,13 @@ sample_format = pyaudio.paInt16  # 16 bits per sample
 channels = 1
 fs = 4000  # Record at 44100 samples per second
 
+
+def preprocess(files):
+  files_ds = tf.data.Dataset.from_tensor_slices(files)
+  output_ds = files_ds.map(get_waveform_and_label, num_parallel_calls=AUTOTUNE)
+  output_ds = output_ds.map(
+      get_spectrogram,  num_parallel_calls=AUTOTUNE)
+  return output_ds
 
 def record(filename: str, seconds: int):
     p = pyaudio.PyAudio()  # Create an interface to PortAudio
@@ -52,7 +63,15 @@ def record(filename: str, seconds: int):
     wf.setsampwidth(p.get_sample_size(sample_format))
     wf.setframerate(fs)
     wf.writeframes(b''.join(frames))
+
+
+    wf = wave.open("test/test.wav", 'wb')
+    wf.setnchannels(channels)
+    wf.setsampwidth(p.get_sample_size(sample_format))
+    wf.setframerate(fs)
+    wf.writeframes(b''.join(frames))
     wf.close()
+
 
     print("Audio guardado.")
 
@@ -95,6 +114,14 @@ def recordData(dir, command):
 
     record(filename=filename_wav, seconds=seconds)
     addingLine(text=filename_wav, filename=filename_txt)
+    sample_ds = preprocess_dataset([str(sample_file)])
+
+    for spectrogram in sample_ds.batch(1):
+        prediction = model(spectrogram)
+        print("Prediction:", tf.nn.softmax(prediction[0]))
+        plt.bar(commands, tf.nn.softmax(prediction[0]))
+        plt.title(f'Predictions for {command}')
+        plt.show()
 
 
 if __name__ == '__main__':
