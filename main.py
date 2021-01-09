@@ -43,12 +43,15 @@ def get_waveform_and_label(file_path):
     waveform = decode_audio(audio_binary)
     return waveform, label
 
+def get_waveform(file_path):
+    audio_binary = tf.io.read_file(file_path)
+    waveform = decode_audio(audio_binary)
+    return waveform,
+
 def get_spectrogram(waveform):
-  # Padding for files with less than 16000 samples
-    print(tf.shape(waveform))
-
+    # Padding for files with less than 16000 samples
+    #print(tf.shape(waveform))
     zero_padding = tf.zeros([16000] - tf.shape(waveform), dtype=tf.float32)
-
 
     # Concatenate audio with padding so that all audio clips will be of the
     # same length
@@ -105,21 +108,20 @@ def main():
     files_ds = tf.data.Dataset.from_tensor_slices(train_files)
     waveform_ds = files_ds.map(get_waveform_and_label, num_parallel_calls=AUTOTUNE)
 
-    rows = 3
-    cols = 3
-    n = rows * cols
-    fig, axes = plt.subplots(rows, cols, figsize=(10, 12))
-    for i, (audio, label) in enumerate(waveform_ds.take(n)):
-        r = i // cols
-        c = i % cols
-        ax = axes[r][c]
-        ax.plot(audio.numpy())
-        ax.set_yticks(np.arange(-1.2, 1.2, 0.2))
-        label = label.numpy().decode('utf-8')
-        ax.set_title(label)
-
-    plt.show()
-    plt.close()
+    #rows = 3
+    #cols = 3
+    #n = rows * cols
+    #fig, axes = plt.subplots(rows, cols, figsize=(10, 12))
+    #for i, (audio, label) in enumerate(waveform_ds.take(n)):
+    #    r = i // cols
+    #    c = i % cols
+    #    ax = axes[r][c]
+    #    ax.plot(audio.numpy())
+    #    ax.set_yticks(np.arange(-1.2, 1.2, 0.2))
+    #    label = label.numpy().decode('utf-8')
+    #    ax.set_title(label)
+#
+    #plt.show()
 
     for waveform, label in waveform_ds.take(1):
         label = label.numpy().decode('utf-8')
@@ -131,31 +133,31 @@ def main():
     print('Audio playback')
     display.display(display.Audio(waveform, rate=16000))
 
-    fig, axes = plt.subplots(2, figsize=(12, 8))
-    timescale = np.arange(waveform.shape[0])
-    axes[0].plot(timescale, waveform.numpy())
-    axes[0].set_title('Waveform')
-    axes[0].set_xlim([0, 16000])
-    plot_spectrogram(spectrogram.numpy(), axes[1])
-    axes[1].set_title('Spectrogram')
-    plt.show()
+    #fig, axes = plt.subplots(2, figsize=(12, 8))
+    #timescale = np.arange(waveform.shape[0])
+    #axes[0].plot(timescale, waveform.numpy())
+    #axes[0].set_title('Waveform')
+    #axes[0].set_xlim([0, 16000])
+    #plot_spectrogram(spectrogram.numpy(), axes[1])
+    #axes[1].set_title('Spectrogram')
+    #plt.show()
 
     spectrogram_ds = waveform_ds.map(
         get_spectrogram_and_label_id, num_parallel_calls=AUTOTUNE)
 
-    rows = 3
-    cols = 3
-    n = rows * cols
-    fig, axes = plt.subplots(rows, cols, figsize=(10, 10))
-    for i, (spectrogram, label_id) in enumerate(spectrogram_ds.take(n)):
-        r = i // cols
-        c = i % cols
-        ax = axes[r][c]
-        plot_spectrogram(np.squeeze(spectrogram.numpy()), ax)
-        ax.set_title(commands[label_id.numpy()])
-        ax.axis('off')
-
-    plt.show()
+    #rows = 3
+    #cols = 3
+    #n = rows * cols
+    #fig, axes = plt.subplots(rows, cols, figsize=(10, 10))
+    #for i, (spectrogram, label_id) in enumerate(spectrogram_ds.take(n)):
+    #    r = i // cols
+    #    c = i % cols
+    #    ax = axes[r][c]
+    #    plot_spectrogram(np.squeeze(spectrogram.numpy()), ax)
+    #    ax.set_title(commands[label_id.numpy()])
+    #    ax.axis('off')
+#
+    #plt.show()
 
     train_ds = spectrogram_ds
     val_ds = preprocess_dataset(val_files)
@@ -198,13 +200,13 @@ def main():
         metrics=['accuracy'],
     )
 
-    EPOCHS = 20
+    EPOCHS = 30
     history = model.fit(
         train_ds,
         validation_data=val_ds,
         epochs=EPOCHS,
-        callbacks=tf.keras.callbacks.EarlyStopping(verbose=1, patience=2),
-        shuffle = True
+        callbacks=tf.keras.callbacks.EarlyStopping(verbose=1, patience=3),
+        #shuffle = True
     )
 
     metrics = history.history
@@ -264,15 +266,7 @@ def main():
     model.save('models/model.h5')
     model.save(f'models/{str(today.date())}/model.h5')
 
-    sample_file = data_dir / 'no/01bb6a2a_nohash_0.wav'
-
-    sample_ds = preprocess_dataset([str(sample_file)])
-
-    for spectrogram, label in sample_ds.batch(1):
-        prediction = model(spectrogram)
-        plt.bar(commands, tf.nn.softmax(prediction[0]))
-        plt.title(f'Predictions for "{commands[label[0]]}"')
-        plt.show()
+    tf.lite.TFLiteConverter
 
 def print_hi(name):
     print(f'Hi, {name}')

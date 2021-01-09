@@ -7,6 +7,7 @@ import os
 import tensorflow as tf
 import numpy as np
 import pathlib
+from test import *
 
 model = load_model('models/model.h5')
 sample_file = pathlib.Path('test/test.wav')
@@ -26,7 +27,7 @@ fs = 4000  # Record at 44100 samples per second
 
 def preprocess(files):
   files_ds = tf.data.Dataset.from_tensor_slices(files)
-  output_ds = files_ds.map(get_waveform_and_label, num_parallel_calls=AUTOTUNE)
+  output_ds = files_ds.map(get_waveform, num_parallel_calls=AUTOTUNE)
   output_ds = output_ds.map(
       get_spectrogram,  num_parallel_calls=AUTOTUNE)
   return output_ds
@@ -72,7 +73,6 @@ def record(filename: str, seconds: int):
     wf.writeframes(b''.join(frames))
     wf.close()
 
-
     print("Audio guardado.")
 
 
@@ -114,14 +114,15 @@ def recordData(dir, command):
 
     record(filename=filename_wav, seconds=seconds)
     addingLine(text=filename_wav, filename=filename_txt)
-    sample_ds = preprocess_dataset([str(sample_file)])
+    sample_ds = preprocess([str(sample_file)])
 
     for spectrogram in sample_ds.batch(1):
         prediction = model(spectrogram)
-        print("Prediction:", tf.nn.softmax(prediction[0]))
-        plt.bar(commands, tf.nn.softmax(prediction[0]))
-        plt.title(f'Predictions for {command}')
-        plt.show()
+        pre = np.argmax(model.predict(spectrogram), axis=1)
+        print("Prediction:", commands[pre])
+        #plt.bar(commands, tf.nn.softmax(prediction[0]))
+        #plt.title(f'Predictions for {command}')
+        #plt.show()
 
 
 if __name__ == '__main__':
@@ -134,7 +135,7 @@ if __name__ == '__main__':
         pass
 
     while start == "y":
-        for command in ['si', 'no', 'sigue', 'izquierda', 'alto']:
+        for command in COMMANDS:
             for i in range(5):
                 print()
                 print(f"Grabando \"{command}\"...")

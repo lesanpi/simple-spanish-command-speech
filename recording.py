@@ -107,7 +107,7 @@ if __name__ == '__main__':
         pass
 
     while start == "y":
-        for command in ['si', 'no', 'sigue', 'izquierda', 'alto']:
+        for command in COMMANDS:
             for i in range(5):
                 print()
                 print(f"Grabando \"{command}\"...")
