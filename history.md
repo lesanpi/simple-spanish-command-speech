@@ -71,3 +71,17 @@ loss: 0.2232 - accuracy: 0.9352 - val_loss: 0.5007 - val_accuracy: 0.9018
 Epoch 00016: early stopping
 Test set accuracy: 81%
 All set accuracy: 96%
+
+### Batchsize = 32 _(8/1/2021)_
+lr = 0.0005
+loss: 0.2105 - accuracy: 0.9342 - val_loss: 0.5440 - val_accuracy: 0.8496
+Epoch 00017: early stopping
+Test set accuracy: 86%
+All set accuracy: 96%
+
+### Batchsize = 32 _(9/1/2021)_
+lr = 0.0005
+loss: 0.1962 - accuracy: 0.9486 - val_loss: 0.4183 - val_accuracy: 0.8627
+Epoch 00016: early stopping
+Test set accuracy: 89%
+All set accuracy: 96%

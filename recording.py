@@ -20,9 +20,10 @@ channels = 1
 fs = 4000  # Record at 44100 samples per second
 
 
-def record(filename: str, seconds: int):
+def record(filename: str, seconds: int, pause = True):
     p = pyaudio.PyAudio()  # Create an interface to PortAudio
-    input("Presiona enter para empezar a grabar..")
+    if pause:
+        input("Presiona enter para empezar a grabar..")
     print('Grabando...')
 
     stream = p.open(format=sample_format,
