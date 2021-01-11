@@ -85,3 +85,23 @@ loss: 0.1962 - accuracy: 0.9486 - val_loss: 0.4183 - val_accuracy: 0.8627
 Epoch 00016: early stopping
 Test set accuracy: 89%
 All set accuracy: 96%
+
+
+#Apagado y Encendido
+loss: 0.4476 - accuracy: 0.8648 - val_loss: 0.8216 - val_accuracy: 0.7914
+Epoch 00008: early stopping
+Test set accuracy: 79%
+All set accuracy: 91%
+
+## Dense y Droupout extra
+loss: 0.3910 - accuracy: 0.8661 - val_loss: 0.6770 - val_accuracy: 0.8342
+Epoch 00017: early stopping
+Test set accuracy: 88%
+All set accuracy: 95%
+
+## Dense y Droupout extra _(11/1/2021)_
+11 comandos, todos los datos balanceados
+loss: 0.3590 - accuracy: 0.8947 - val_loss: 0.4243 - val_accuracy: 0.8911
+Epoch 00017: early stopping
+Test set accuracy: 86%
+All set accuracy: 95%

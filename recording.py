@@ -19,6 +19,19 @@ sample_format = pyaudio.paInt16  # 16 bits per sample
 channels = 1
 fs = 4000  # Record at 44100 samples per second
 
+def commandsToRecord():
+    files = tf.io.gfile.glob(str(DATA_DIR) + '/*/*')
+    commandsToRecord = []
+    for command in COMMANDS:
+        commandFiles = tf.io.gfile.glob(str(DATA_DIR) + f'/{command}/*')
+
+        if len(commandFiles) / len(files) < 1 / len(COMMANDS) and command != 'none':
+            print(command, len(commandFiles) / len(files), 1 / len(COMMANDS))
+            commandsToRecord.append(command)
+    if not commandsToRecord and len(files) < len(COMMANDS) * 100:
+        commandsToRecord = COMMANDS
+
+    return commandsToRecord
 
 def record(filename: str, seconds: int, pause = True):
     p = pyaudio.PyAudio()  # Create an interface to PortAudio
@@ -108,7 +121,7 @@ if __name__ == '__main__':
         pass
 
     while start == "y":
-        for command in COMMANDS:
+        for command in commandsToRecord():
             for i in range(5):
                 print()
                 print(f"Grabando \"{command}\"...")

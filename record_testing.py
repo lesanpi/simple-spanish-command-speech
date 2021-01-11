@@ -24,7 +24,7 @@ sample_format = pyaudio.paInt16  # 16 bits per sample
 channels = 1
 fs = 4000  # Record at 44100 samples per second
 
-def commandsToRecord():
+def commandsToRecord(commands = []):
     files = tf.io.gfile.glob(str(DATA_DIR) + '/*/*')
     commandsToRecord = []
     for command in COMMANDS:
@@ -35,9 +35,10 @@ def commandsToRecord():
             commandsToRecord.append(command)
     if not commandsToRecord and len(files) < len(COMMANDS) * 100:
         commandsToRecord = COMMANDS
-
-    return commandsToRecord
-
+    if not commands:
+        return commandsToRecord
+    else:
+        return tuple(commands + commandsToRecord)
 def preprocess(files):
   files_ds = tf.data.Dataset.from_tensor_slices(files)
   output_ds = files_ds.map(get_waveform, num_parallel_calls=AUTOTUNE)

@@ -190,6 +190,8 @@ def main():
         layers.Flatten(),
         layers.Dense(128, activation='relu'),
         layers.Dropout(0.5),
+        layers.Dense(128, activation='relu'),
+        layers.Dropout(0.5),
         layers.Dense(num_labels),
     ])
     model.summary()
@@ -206,7 +208,6 @@ def main():
         validation_data=val_ds,
         epochs=EPOCHS,
         callbacks=tf.keras.callbacks.EarlyStopping(verbose=1, patience=3),
-        #shuffle = True
     )
 
     metrics = history.history
